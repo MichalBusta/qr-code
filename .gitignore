@@ -30,9 +30,4 @@
 *.out
 *.app
 
-.gitignore
 .idea/
-CMakeLists.txt
-include/
-main.cpp
-zbar/
