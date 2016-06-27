@@ -172,7 +172,7 @@ static int intsort (const void *a,
 #endif
 
 /* verify that format list is in required sort order */
-static inline int verify_format_sort (void)
+static __inline int verify_format_sort (void)
 {
     int i;
     for(i = 0; i < num_format_defs; i++) {
@@ -224,7 +224,7 @@ static inline int verify_format_sort (void)
     return(-1);
 }
 
-static inline void uv_round (zbar_image_t *img,
+static __inline void uv_round (zbar_image_t *img,
                              const zbar_format_def_t *fmt)
 {
     img->width >>= fmt->p.yuv.xsub2;
@@ -233,7 +233,7 @@ static inline void uv_round (zbar_image_t *img,
     img->height <<= fmt->p.yuv.ysub2;
 }
 
-static inline void uv_roundup (zbar_image_t *img,
+static __inline void uv_roundup (zbar_image_t *img,
                                const zbar_format_def_t *fmt)
 {
     unsigned xmask, ymask;
@@ -247,7 +247,7 @@ static inline void uv_roundup (zbar_image_t *img,
         img->height = (img->height + ymask) & ~ymask;
 }
 
-static inline unsigned long uvp_size (const zbar_image_t *img,
+static __inline unsigned long uvp_size (const zbar_image_t *img,
                                       const zbar_format_def_t *fmt)
 {
     if(fmt->group == ZBAR_FMT_GRAY)
@@ -256,7 +256,7 @@ static inline unsigned long uvp_size (const zbar_image_t *img,
            (img->height >> fmt->p.yuv.ysub2));
 }
 
-static inline uint32_t convert_read_rgb (const uint8_t *srcp,
+static __inline uint32_t convert_read_rgb (const uint8_t *srcp,
                                          int bpp)
 {
     uint32_t p;
@@ -274,7 +274,7 @@ static inline uint32_t convert_read_rgb (const uint8_t *srcp,
     return(p);
 }
 
-static inline void convert_write_rgb (uint8_t *dstp,
+static __inline void convert_write_rgb (uint8_t *dstp,
                                       uint32_t p,
                                       int bpp)
 {
@@ -301,7 +301,7 @@ static void cleanup_ref (zbar_image_t *img)
 /* resize y plane, drop extra columns/rows from the right/bottom,
  * or duplicate last column/row to pad missing data
  */
-static inline void convert_y_resize (zbar_image_t *dst,
+static __inline void convert_y_resize (zbar_image_t *dst,
                                      const zbar_format_def_t *dstfmt,
                                      const zbar_image_t *src,
                                      const zbar_format_def_t *srcfmt,
@@ -1045,7 +1045,7 @@ zbar_image_t *zbar_image_convert (const zbar_image_t *src,
     return(zbar_image_convert_resize(src, fmt, src->width, src->height));
 }
 
-static inline int has_format (uint32_t fmt,
+static __inline int has_format (uint32_t fmt,
                               const uint32_t *fmts)
 {
     for(; *fmts; fmts++)

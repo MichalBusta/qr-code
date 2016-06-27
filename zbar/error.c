@@ -158,7 +158,7 @@ const char *_zbar_error_string (const void *container,
         len += sprintf(err->buf + len, sysfmt, syserr, err->errnum);
     }
 #endif
-#ifdef _WIN32
+#ifdef _WIN32XX
     else if(err->type == ZBAR_ERR_WINAPI) {
         char *syserr = NULL;
         if(FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |

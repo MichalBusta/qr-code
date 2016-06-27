@@ -40,19 +40,19 @@ typedef struct zbar_mutex_s {
     CRITICAL_SECTION mutex;
 } zbar_mutex_t;
 
-static inline int _zbar_mutex_init (zbar_mutex_t *lock)
+static __inline int _zbar_mutex_init (zbar_mutex_t *lock)
 {
     lock->count = 1;
     InitializeCriticalSection(&lock->mutex);
     return(0);
 }
 
-static inline void _zbar_mutex_destroy (zbar_mutex_t *lock)
+static __inline void _zbar_mutex_destroy (zbar_mutex_t *lock)
 {
     DeleteCriticalSection(&lock->mutex);
 }
 
-static inline int _zbar_mutex_lock (zbar_mutex_t *lock)
+static __inline int _zbar_mutex_lock (zbar_mutex_t *lock)
 {
     EnterCriticalSection(&lock->mutex);
     if(lock->count++ < 1)
@@ -60,7 +60,7 @@ static inline int _zbar_mutex_lock (zbar_mutex_t *lock)
     return(0);
 }
 
-static inline int _zbar_mutex_unlock (zbar_mutex_t *lock)
+static __inline int _zbar_mutex_unlock (zbar_mutex_t *lock)
 {
     if(lock->count-- <= 1)
         assert(0);

@@ -30,6 +30,8 @@
 #include "debug.h"
 #include "decoder.h"
 
+#define inline __inline
+
 /* partial decode symbol location */
 typedef enum symbol_partial_e {
     EAN_LEFT   = 0x0000,
@@ -261,14 +263,17 @@ static inline signed char decode4 (zbar_decoder_t *dcode)
 static inline char ean_part_end2 (ean_decoder_t *ean,
                                   ean_pass_t *pass)
 {
+	unsigned char par;
+	unsigned char chk;
+
     if(!TEST_CFG(ean->ean2_config, ZBAR_CFG_ENABLE))
         return(ZBAR_NONE);
 
     /* extract parity bits */
-    unsigned char par = ((pass->raw[1] & 0x10) >> 3 |
+    par = ((pass->raw[1] & 0x10) >> 3 |
                          (pass->raw[2] & 0x10) >> 4);
     /* calculate "checksum" */
-    unsigned char chk = ~((pass->raw[1] & 0xf) * 10 +
+    chk = ~((pass->raw[1] & 0xf) * 10 +
                           (pass->raw[2] & 0xf)) & 0x3;
     dbprintf(2, " par=%x chk=%x", par, chk);
     if(par != chk)
@@ -280,7 +285,7 @@ static inline char ean_part_end2 (ean_decoder_t *ean,
     return(ZBAR_EAN2);
 }
 
-static inline zbar_symbol_type_t ean_part_end4 (ean_pass_t *pass,
+static __inline zbar_symbol_type_t ean_part_end4 (ean_pass_t *pass,
                                                 unsigned char fwd)
 {
     /* extract parity bits */
@@ -317,23 +322,27 @@ static inline zbar_symbol_type_t ean_part_end4 (ean_pass_t *pass,
 static inline char ean_part_end5 (ean_decoder_t *ean,
                                   ean_pass_t *pass)
 {
+	unsigned char par;
+	unsigned char chk;
+	unsigned char parchk;
+
     if(!TEST_CFG(ean->ean5_config, ZBAR_CFG_ENABLE))
         return(ZBAR_NONE);
 
     /* extract parity bits */
-    unsigned char par = ((pass->raw[1] & 0x10) |
+    par = ((pass->raw[1] & 0x10) |
                          (pass->raw[2] & 0x10) >> 1 |
                          (pass->raw[3] & 0x10) >> 2 |
                          (pass->raw[4] & 0x10) >> 3 |
                          (pass->raw[5] & 0x10) >> 4);
     /* calculate checksum */
-    unsigned char chk = (((pass->raw[1] & 0x0f) +
+    chk = (((pass->raw[1] & 0x0f) +
                           (pass->raw[2] & 0x0f) * 3 +
                           (pass->raw[3] & 0x0f) +
                           (pass->raw[4] & 0x0f) * 3 +
                           (pass->raw[5] & 0x0f)) * 3) % 10;
 
-    unsigned char parchk = parity_decode[par >> 1];
+    parchk = parity_decode[par >> 1];
     if(par & 1)
         parchk >>= 4;
     parchk &= 0xf;
@@ -411,10 +420,12 @@ static inline zbar_symbol_type_t ean_part_end7 (ean_decoder_t *ean,
 }
 
 /* update state for one of 4 parallel passes */
-static inline zbar_symbol_type_t decode_pass (zbar_decoder_t *dcode,
+static __inline zbar_symbol_type_t decode_pass (zbar_decoder_t *dcode,
                                               ean_pass_t *pass)
 {
     unsigned char idx, fwd;
+	zbar_symbol_type_t part;
+
     pass->state++;
     idx = pass->state & STATE_IDX;
     fwd = pass->state & 1;
@@ -447,7 +458,7 @@ static inline zbar_symbol_type_t decode_pass (zbar_decoder_t *dcode,
                 TEST_CFG(dcode->ean.ean8_config, ZBAR_CFG_ENABLE) &&
                 !aux_end(dcode, fwd)) {
             dbprintf(2, " fwd=%x", fwd);
-            zbar_symbol_type_t part = ean_part_end4(pass, fwd);
+            part = ean_part_end4(pass, fwd);
             if(part)
                 dcode->ean.direction = (pass->state & STATE_REV) != 0;
             pass->state = -1;
@@ -590,10 +601,10 @@ static inline zbar_symbol_type_t integrate_partial (ean_decoder_t *ean,
                                                     ean_pass_t *pass,
                                                     zbar_symbol_type_t part)
 {
+	signed char i, j;
     /* copy raw data into holding buffer */
     /* if same partial is not consistent, reset others */
     dbprintf(2, " integrate part=%x (%s)", part, dsprintbuf(ean));
-    signed char i, j;
 
     if((ean->left && ((part & ZBAR_SYMBOL) != ean->left)) ||
        (ean->right && ((part & ZBAR_SYMBOL) != ean->right))) {

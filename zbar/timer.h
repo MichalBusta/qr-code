@@ -83,12 +83,12 @@ static inline int _zbar_timer_check (zbar_timer_t *timer)
 
 typedef DWORD zbar_timer_t;
 
-static inline int _zbar_timer_now ()
+static __inline int _zbar_timer_now ()
 {
     return(timeGetTime());
 }
 
-static inline zbar_timer_t *_zbar_timer_init (zbar_timer_t *timer,
+static __inline zbar_timer_t *_zbar_timer_init (zbar_timer_t *timer,
                                               int delay)
 {
     if(delay < 0)
@@ -98,7 +98,7 @@ static inline zbar_timer_t *_zbar_timer_init (zbar_timer_t *timer,
     return(timer);
 }
 
-static inline int _zbar_timer_check (zbar_timer_t *timer)
+static __inline int _zbar_timer_check (zbar_timer_t *timer)
 {
     int delay;
     if(!timer)

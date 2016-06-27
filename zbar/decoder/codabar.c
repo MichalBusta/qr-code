@@ -46,7 +46,7 @@ static const unsigned char codabar_hi[8] = {
 static const unsigned char codabar_characters[20] =
     "0123456789-$:/.+ABCD";
 
-static inline int
+static __inline int
 check_width (unsigned ref,
              unsigned w)
 {
@@ -56,9 +56,30 @@ check_width (unsigned ref,
     return(ref - dref <= w && w <= ref + dref);
 }
 
-static inline signed char
+static __inline signed char
 codabar_decode7 (zbar_decoder_t *dcode)
 {
+	unsigned ibar;
+	unsigned wbmax;
+	unsigned wbmin;
+	unsigned wb1; 
+	unsigned wb2;
+
+	unsigned long b0b3;
+	unsigned long b1b2;
+
+	unsigned ispc;
+
+	unsigned wsmax;
+	unsigned wsmid;
+	unsigned wsmin;
+
+	int c;
+	unsigned ic;
+
+	unsigned long s0s2;
+	unsigned long s1s1;
+
     codabar_decoder_t *codabar = &dcode->codabar;
     unsigned s = codabar->s7;
     dbprintf(2, " s=%d", s);
@@ -72,11 +93,11 @@ codabar_decode7 (zbar_decoder_t *dcode)
     }
 
     /* extract min/max bar */
-    unsigned ibar = decode_sortn(dcode, 4, 1);
+    ibar = decode_sortn(dcode, 4, 1);
     dbprintf(2, " bar=%04x", ibar);
 
-    unsigned wbmax = get_width(dcode, ibar & 0xf);
-    unsigned wbmin = get_width(dcode, ibar >> 12);
+    wbmax = get_width(dcode, ibar & 0xf);
+    wbmin = get_width(dcode, ibar >> 12);
     if(8 * wbmin < wbmax ||
        3 * wbmin > 2 * wbmax)
     {
@@ -84,10 +105,10 @@ codabar_decode7 (zbar_decoder_t *dcode)
         return(-1);
     }
 
-    unsigned wb1 = get_width(dcode, (ibar >> 8) & 0xf);
-    unsigned wb2 = get_width(dcode, (ibar >> 4) & 0xf);
-    unsigned long b0b3 = wbmin * wbmax;
-    unsigned long b1b2 = wb1 * wb2;
+    wb1 = get_width(dcode, (ibar >> 8) & 0xf);
+    wb2 = get_width(dcode, (ibar >> 4) & 0xf);
+    b0b3 = wbmin * wbmax;
+    b1b2 = wb1 * wb2;
     if(b1b2 + b1b2 / 8 < b0b3) {
         /* single wide bar combinations */
         if(8 * wbmin < 5 * wb1 ||
@@ -117,12 +138,12 @@ codabar_decode7 (zbar_decoder_t *dcode)
         return(-1);
     }
 
-    unsigned ispc = decode_sort3(dcode, 2);
+    ispc = decode_sort3(dcode, 2);
     dbprintf(2, "(%x) spc=%03x", ibar, ispc);
 
-    unsigned wsmax = get_width(dcode, ispc & 0xf);
-    unsigned wsmid = get_width(dcode, (ispc >> 4) & 0xf);
-    unsigned wsmin = get_width(dcode, (ispc >> 8) & 0xf);
+    wsmax = get_width(dcode, ispc & 0xf);
+    wsmid = get_width(dcode, (ispc >> 4) & 0xf);
+    wsmin = get_width(dcode, (ispc >> 8) & 0xf);
     if(ibar >> 2) {
         /* verify no wide spaces */
         if(8 * wsmin < wsmax ||
@@ -135,7 +156,7 @@ codabar_decode7 (zbar_decoder_t *dcode)
         ibar &= 0x3;
         if(codabar->direction)
             ibar = 3 - ibar;
-        int c = (0xfcde >> (ibar << 2)) & 0xf;
+        c = (0xfcde >> (ibar << 2)) & 0xf;
         dbprintf(2, " ex[%d]=%x", ibar, c);
         return(c);
     }
@@ -146,9 +167,10 @@ codabar_decode7 (zbar_decoder_t *dcode)
         return(-1);
     }
 
-    unsigned long s0s2 = wsmin * wsmax;
-    unsigned long s1s1 = wsmid * wsmid;
+    s0s2 = wsmin * wsmax;
+    s1s1 = wsmid * wsmid;
     if(s1s1 + s1s1 / 8 < s0s2) {
+
         /* single wide space */
         if(8 * wsmin < 5 * wsmid ||
            4 * wsmid > 3 * wsmax)
@@ -157,10 +179,10 @@ codabar_decode7 (zbar_decoder_t *dcode)
             return(-1);
         }
         ispc = ((ispc & 0xf) >> 1) - 1;
-        unsigned ic = (ispc << 2) | ibar;
+        ic = (ispc << 2) | ibar;
         if(codabar->direction)
             ic = 11 - ic;
-        int c = codabar_lo[ic];
+        c = codabar_lo[ic];
         dbprintf(2, "(%d) lo[%d]=%x", ispc, ic, c);
         return(c);
     }
@@ -178,9 +200,9 @@ codabar_decode7 (zbar_decoder_t *dcode)
         }
         ispc >>= 10;
         dbprintf(2, "(%d)", ispc);
-        unsigned ic = ispc * 4 + ibar;
+        ic = ispc * 4 + ibar;
         zassert(ic < 8, -1, "ic=%d ispc=%d ibar=%d", ic, ispc, ibar);
-        unsigned char c = codabar_hi[ic];
+        c = codabar_hi[ic];
         if(c >> 2 != codabar->direction) {
             dbprintf(2, " [invalid stop]");
             return(-1);
@@ -195,9 +217,26 @@ codabar_decode7 (zbar_decoder_t *dcode)
     }
 }
 
-static inline signed char
+static __inline signed char
 codabar_decode_start (zbar_decoder_t *dcode)
 {
+	unsigned wsmax;
+	unsigned wsmin;
+	unsigned wsmid;
+
+	unsigned ispc;
+	unsigned ibar;
+
+	unsigned wbmax;
+	unsigned wbmin;
+	unsigned wb1;
+	unsigned wb2;
+
+	unsigned qz;
+
+	int ic;
+	int c;
+
     codabar_decoder_t *codabar = &dcode->codabar;
     unsigned s = codabar->s7;
     if(s < 8)
@@ -205,7 +244,7 @@ codabar_decode_start (zbar_decoder_t *dcode)
     dbprintf(2, "      codabar: s=%d", s);
 
     /* check leading quiet zone - spec is 10x */
-    unsigned qz = get_width(dcode, 8);
+    qz = get_width(dcode, 8);
     if((qz && qz * 2 < s) ||
        4 * get_width(dcode, 0) > 3 * s)
     {
@@ -214,7 +253,7 @@ codabar_decode_start (zbar_decoder_t *dcode)
     }
 
     /* check space ratios first */
-    unsigned ispc = decode_sort3(dcode, 2);
+    ispc = decode_sort3(dcode, 2);
     dbprintf(2, " spc=%03x", ispc);
     if((ispc >> 8) == 4) {
         dbprintf(2, " [space comb]\n");
@@ -222,9 +261,9 @@ codabar_decode_start (zbar_decoder_t *dcode)
     }
 
     /* require 2 wide and 1 narrow spaces */
-    unsigned wsmax = get_width(dcode, ispc & 0xf);
-    unsigned wsmin = get_width(dcode, ispc >> 8);
-    unsigned wsmid = get_width(dcode, (ispc >> 4) & 0xf);
+    wsmax = get_width(dcode, ispc & 0xf);
+    wsmin = get_width(dcode, ispc >> 8);
+    wsmid = get_width(dcode, (ispc >> 4) & 0xf);
     if(8 * wsmin < wsmax ||
        3 * wsmin > 2 * wsmax ||
        4 * wsmin > 3 * wsmid ||
@@ -238,11 +277,11 @@ codabar_decode_start (zbar_decoder_t *dcode)
     dbprintf(2, "(%d)", ispc);
 
     /* check bar ratios */
-    unsigned ibar = decode_sortn(dcode, 4, 1);
+    ibar = decode_sortn(dcode, 4, 1);
     dbprintf(2, " bar=%04x", ibar);
 
-    unsigned wbmax = get_width(dcode, ibar & 0xf);
-    unsigned wbmin = get_width(dcode, ibar >> 12);
+    wbmax = get_width(dcode, ibar & 0xf);
+    wbmin = get_width(dcode, ibar >> 12);
     if(8 * wbmin < wbmax ||
        3 * wbmin > 2 * wbmax)
     {
@@ -251,8 +290,8 @@ codabar_decode_start (zbar_decoder_t *dcode)
     }
 
     /* require 1 wide & 3 narrow bars */
-    unsigned wb1 = get_width(dcode, (ibar >> 8) & 0xf);
-    unsigned wb2 = get_width(dcode, (ibar >> 4) & 0xf);
+    wb1 = get_width(dcode, (ibar >> 8) & 0xf);
+    wb2 = get_width(dcode, (ibar >> 4) & 0xf);
     if(8 * wbmin < 5 * wb1 ||
        8 * wb1 < 5 * wb2 ||
        4 * wb2 > 3 * wbmax ||
@@ -266,9 +305,9 @@ codabar_decode_start (zbar_decoder_t *dcode)
     dbprintf(2, "(%d)", ibar);
 
     /* decode combination */
-    int ic = ispc * 4 + ibar;
+    ic = ispc * 4 + ibar;
     zassert(ic < 8, ZBAR_NONE, "ic=%d ispc=%d ibar=%d", ic, ispc, ibar);
-    int c = codabar_hi[ic];
+    c = codabar_hi[ic];
     codabar->buf[0] = (c & 0x3) | 0x10;
 
     /* set character direction */
@@ -282,7 +321,7 @@ codabar_decode_start (zbar_decoder_t *dcode)
     return(ZBAR_PARTIAL);
 }
 
-static inline int
+static __inline int
 codabar_checksum (zbar_decoder_t *dcode,
                   unsigned n)
 {
@@ -293,13 +332,16 @@ codabar_checksum (zbar_decoder_t *dcode,
     return(!!(chk & 0xf));
 }
 
-static inline zbar_symbol_type_t
+static __inline zbar_symbol_type_t
 codabar_postprocess (zbar_decoder_t *dcode)
 {
     codabar_decoder_t *codabar = &dcode->codabar;
     int dir = codabar->direction;
+	int i;
+	int n = codabar->character;
+
     dcode->direction = 1 - 2 * dir;
-    int i, n = codabar->character;
+	
     for(i = 0; i < NIBUF; i++)
         dcode->buf[i] = codabar->buf[i];
     if(dir)
@@ -339,6 +381,12 @@ zbar_symbol_type_t
 _zbar_decode_codabar (zbar_decoder_t *dcode)
 {
     codabar_decoder_t *codabar = &dcode->codabar;
+	signed char c;
+	unsigned s;
+	unsigned n;
+	unsigned qz;
+	unsigned char *buf;
+	zbar_symbol_type_t sym;
 
     /* update latest character width */
     codabar->s7 -= get_width(dcode, 8);
@@ -359,14 +407,13 @@ _zbar_decode_codabar (zbar_decoder_t *dcode)
              (codabar->direction) ? '<' : '>',
              codabar->character, codabar->element);
 
-    signed char c = codabar_decode7(dcode);
+    c = codabar_decode7(dcode);
     dbprintf(1, " %d", c);
     if(c < 0) {
         dbprintf(1, " [aborted]\n");
         goto reset;
     }
 
-    unsigned char *buf;
     if(codabar->character < NIBUF)
         buf = codabar->buf;
     else {
@@ -388,14 +435,14 @@ _zbar_decode_codabar (zbar_decoder_t *dcode)
         return(ZBAR_PARTIAL);
     }
 
-    unsigned s = codabar->s7;
+    s = codabar->s7;
     if(c & 0x10) {
-        unsigned qz = get_width(dcode, 0);
+        qz = get_width(dcode, 0);
         if(qz && qz * 2 < s) {
             dbprintf(2, " [invalid qz]\n");
             goto reset;
         }
-        unsigned n = codabar->character;
+        n = codabar->character;
         if(n < CFG(*codabar, ZBAR_CFG_MIN_LEN) ||
            (CFG(*codabar, ZBAR_CFG_MAX_LEN) > 0 &&
             n > CFG(*codabar, ZBAR_CFG_MAX_LEN)))
@@ -411,7 +458,7 @@ _zbar_decode_codabar (zbar_decoder_t *dcode)
         }
         dbprintf(2, " stop=%c", c + 0x31);
 
-        zbar_symbol_type_t sym = codabar_postprocess(dcode);
+        sym = codabar_postprocess(dcode);
         if(sym > ZBAR_PARTIAL)
             dbprintf(2, " [valid stop]");
         else {

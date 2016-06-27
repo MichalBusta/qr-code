@@ -1,25 +1,25 @@
 /* manually customized for iPhone platform */
 
 /* whether to build support for Code 128 symbology */
-#define ENABLE_CODE128 1
+//#define ENABLE_CODE128 1
 
 /* whether to build support for Code 93 symbology */
-#define ENABLE_CODE93 1
+// ENABLE_CODE93 1
 
 /* whether to build support for Code 39 symbology */
-#define ENABLE_CODE39 1
+//#define ENABLE_CODE39 1
 
 /* whether to build support for Codabar symbology */
-#define ENABLE_CODABAR 1
+//#define ENABLE_CODABAR 1
 
 /* whether to build support for DataBar symbology */
-#define ENABLE_DATABAR 1
+//#define ENABLE_DATABAR 1
 
 /* whether to build support for EAN symbologies */
-#define ENABLE_EAN 1
+//#define ENABLE_EAN 1
 
 /* whether to build support for Interleaved 2 of 5 symbology */
-#define ENABLE_I25 1
+//#define ENABLE_I25 1
 
 /* whether to build support for PDF417 symbology */
 #undef ENABLE_PDF417
@@ -46,7 +46,7 @@
 #undef HAVE_ICONV
 
 /* Define to 1 if you have the <inttypes.h> header file. */
-#define HAVE_INTTYPES_H 1
+//#define HAVE_INTTYPES_H 1
 
 /* Define to 1 if you have the <jpeglib.h> header file. */
 #undef HAVE_JPEGLIB_H
@@ -109,10 +109,8 @@
 #define HAVE_SYS_STAT_H 1
 
 /* Define to 1 if you have the <sys/times.h> header file. */
-#define HAVE_SYS_TIMES_H 1
+//#define HAVE_SYS_TIMES_H 1
 
-/* Define to 1 if you have the <sys/time.h> header file. */
-#define HAVE_SYS_TIME_H 1
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #define HAVE_SYS_TYPES_H 1
@@ -121,7 +119,7 @@
 #define HAVE_UINTPTR_T 1
 
 /* Define to 1 if you have the <unistd.h> header file. */
-#define HAVE_UNISTD_H 1
+//#define HAVE_UNISTD_H 1
 
 /* Define to 1 if you have the <vfw.h> header file. */
 #undef HAVE_VFW_H
@@ -209,7 +207,7 @@
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
 #ifndef __cplusplus
-#undef inline
+#undef __inline
 #endif
 
 /* Define to the type of a signed integer type of width exactly 32 bits if
@@ -232,3 +230,4 @@
 # define HAVE_X
 #endif
 
+# define PRIx32		"x"

@@ -89,7 +89,7 @@ static const unsigned char exp_checksums[] = {
     1, 189, 62, 113, 46, 43, 109, 134, 6, 79, 161, 45
 };
 
-static inline void
+static __inline void
 append_check14 (unsigned char *buf)
 {
     unsigned char chk = 0, d;
@@ -106,7 +106,7 @@ append_check14 (unsigned char *buf)
     *buf = chk + '0';
 }
 
-static inline void
+static __inline void
 decode10 (unsigned char *buf,
           unsigned long n,
           int i)
@@ -139,7 +139,7 @@ decode10 (unsigned char *buf,
         PUSH_CHAR(c3);                  \
     } while(0);
 
-static inline int
+static __inline int
 databar_postprocess_exp (zbar_decoder_t *dcode,
                          int *data)
 {
@@ -439,7 +439,7 @@ databar_postprocess_exp (zbar_decoder_t *dcode,
 /* convert from heterogeneous base {1597,2841}
  * to base 10 character representation
  */
-static inline void
+static __inline void
 databar_postprocess (zbar_decoder_t *dcode,
                      unsigned d[4])
 {
@@ -447,6 +447,8 @@ databar_postprocess (zbar_decoder_t *dcode,
     int i;
     unsigned c, chk = 0;
     unsigned char *buf = dcode->buf;
+	unsigned long r;
+
     *(buf++) = '0';
     *(buf++) = '1';
     buf += 15;
@@ -454,7 +456,7 @@ databar_postprocess (zbar_decoder_t *dcode,
     *--buf = '\0';
 
     dbprintf(2, "\n    d={%d,%d,%d,%d}", d[0], d[1], d[2], d[3]);
-    unsigned long r = d[0] * 1597 + d[1];
+    r = d[0] * 1597 + d[1];
     d[1] = r / 10000;
     r %= 10000;
     r = r * 2841 + d[2];
@@ -519,7 +521,7 @@ databar_postprocess (zbar_decoder_t *dcode,
     dbprintf(2, "\n    %s", _zbar_decoder_buf_dump(dcode->buf, 16));
 }
 
-static inline int
+static __inline int
 check_width (unsigned wf,
              unsigned wd,
              unsigned n)
@@ -530,7 +532,7 @@ check_width (unsigned wf,
     return(wf - dwf <= wd && wd <= wf + dwf);
 }
 
-static inline void
+static __inline void
 merge_segment (databar_decoder_t *db,
                databar_segment_t *seg)
 {
@@ -561,13 +563,14 @@ merge_segment (databar_decoder_t *db,
     }
 }
 
-static inline zbar_symbol_type_t
+static __inline zbar_symbol_type_t
 match_segment (zbar_decoder_t *dcode,
                databar_segment_t *seg)
 {
     databar_decoder_t *db = &dcode->databar;
     unsigned csegs = db->csegs, maxage = 0xfff;
     int i0, i1, i2, maxcnt = 0;
+	unsigned d[4];
     databar_segment_t *smax[3] = { NULL, };
 
     if(seg->partial && seg->count < 4)
@@ -642,7 +645,6 @@ match_segment (zbar_decoder_t *dcode,
     if(!smax[0])
         return(ZBAR_PARTIAL);
 
-    unsigned d[4];
     d[(seg->color << 1) | seg->side] = seg->data;
     for(i0 = 0; i0 < 3; i0++) {
         d[(smax[i0]->color << 1) | smax[i0]->side] = smax[i0]->data;
@@ -663,7 +665,7 @@ match_segment (zbar_decoder_t *dcode,
     return(ZBAR_DATABAR);
 }
 
-static inline unsigned
+static __inline unsigned
 lookup_sequence (databar_segment_t *seg,
                  int fixed,
                  int seq[22])
@@ -702,7 +704,7 @@ lookup_sequence (databar_segment_t *seg,
 #define IDX(s) \
     (((s)->finder << 2) | ((s)->color << 1) | ((s)->color ^ (s)->side))
 
-static inline zbar_symbol_type_t
+static __inline zbar_symbol_type_t
 match_segment_exp (zbar_decoder_t *dcode,
                    databar_segment_t *seg,
                    int dir)
@@ -712,6 +714,9 @@ match_segment_exp (zbar_decoder_t *dcode,
     int ifixed = seg - db->segs, fixed = IDX(seg), maxcnt = 0;
     int iseg[DATABAR_MAX_SEGMENTS];
     unsigned csegs = db->csegs, width = seg->width, maxage = 0x7fff;
+	unsigned cnt = 0, chk = 0, age;
+	unsigned data0;
+	unsigned chk0;
 
     bestsegs[0] = segs[0] = seq[1] = -1;
     seq[0] = 0;
@@ -774,7 +779,7 @@ match_segment_exp (zbar_decoder_t *dcode,
             break;
 
         seg = db->segs + segs[0];
-        unsigned cnt = 0, chk = 0, age = (db->epoch - seg->epoch) & 0xff;
+		cnt = 0; chk = 0; age = (db->epoch - seg->epoch) & 0xff;
         for(i = 1; segs[i] >= 0; i++) {
             seg = db->segs + segs[i];
             chk += seg->check;
@@ -782,8 +787,8 @@ match_segment_exp (zbar_decoder_t *dcode,
             age += (db->epoch - seg->epoch) & 0xff;
         }
 
-        unsigned data0 = db->segs[segs[0]].data;
-        unsigned chk0 = data0 % 211;
+        data0 = db->segs[segs[0]].data;
+        chk0 = data0 % 211;
         chk %= 211;
 
         dbprintf(2, " chk=%d ?= %d", chk, chk0);
@@ -832,7 +837,7 @@ match_segment_exp (zbar_decoder_t *dcode,
 }
 #undef IDX
 
-static inline unsigned
+static __inline unsigned
 calc_check (unsigned sig0,
             unsigned sig1,
             unsigned side,
@@ -854,34 +859,47 @@ calc_check (unsigned sig0,
     return(chk);
 }
 
-static inline int
+static __inline int
 calc_value4 (unsigned sig,
              unsigned n,
              unsigned wmax,
              unsigned nonarrow)
 {
     unsigned v = 0;
+	unsigned w1;
+	unsigned w2;
+	unsigned w3;
+
+	unsigned n0;
+	unsigned sk20;
+	unsigned sk21;
+
+	unsigned wm20;
+	unsigned wm21;
+	unsigned k;
+	unsigned w0;
+
     n--;
 
-    unsigned w0 = (sig >> 12) & 0xf;
+    w0 = (sig >> 12) & 0xf;
     if(w0 > 1) {
         if(w0 > wmax)
             return(-1);
-        unsigned n0 = n - w0;
-        unsigned sk20 = (n - 1) * n * (2 * n - 1);
-        unsigned sk21 = n0 * (n0 + 1) * (2 * n0 + 1);
+        n0 = n - w0;
+        sk20 = (n - 1) * n * (2 * n - 1);
+        sk21 = n0 * (n0 + 1) * (2 * n0 + 1);
         v = sk20 - sk21 - 3 * (w0 - 1) * (2 * n - w0);
 
         if(!nonarrow && w0 > 2 && n > 4) {
-            unsigned k = (n - 2) * (n - 1) * (2 * n - 3) - sk21;
+            k = (n - 2) * (n - 1) * (2 * n - 3) - sk21;
             k -= 3 * (w0 - 2) * (14 * n - 7 * w0 - 31);
             v -= k;
         }
 
         if(n - 2 > wmax) {
-            unsigned wm20 = 2 * wmax * (wmax + 1);
-            unsigned wm21 = (2 * wmax + 1);
-            unsigned k = sk20;
+            wm20 = 2 * wmax * (wmax + 1);
+            wm21 = (2 * wmax + 1);
+            k = sk20;
             if(n0 > wmax) {
                 k -= sk21;
                 k += 3 * (w0 - 1) * (wm20 - wm21 * (2 * n - w0));
@@ -899,7 +917,7 @@ calc_value4 (unsigned sig,
         nonarrow = 1;
     n -= w0;
 
-    unsigned w1 = (sig >> 8) & 0xf;
+    w1 = (sig >> 8) & 0xf;
     if(w1 > 1) {
         if(w1 > wmax)
             return(-1);
@@ -917,7 +935,7 @@ calc_value4 (unsigned sig,
         nonarrow = 1;
     n -= w1;
 
-    unsigned w2 = (sig >> 4) & 0xf;
+    w2 = (sig >> 4) & 0xf;
     if(w2 > 1) {
         if(w2 > wmax)
             return(-1);
@@ -930,7 +948,7 @@ calc_value4 (unsigned sig,
     else
         nonarrow = 1;
 
-    unsigned w3 = sig & 0xf;
+    w3 = sig & 0xf;
     if(w3 == 1)
         nonarrow = 1;
     else if(w3 > wmax)
@@ -942,7 +960,7 @@ calc_value4 (unsigned sig,
     return(v);
 }
 
-static inline zbar_symbol_type_t
+static __inline zbar_symbol_type_t
 decode_char (zbar_decoder_t *dcode,
              databar_segment_t *seg,
              int off,
@@ -952,6 +970,14 @@ decode_char (zbar_decoder_t *dcode,
     unsigned s = calc_s(dcode, (dir > 0) ? off : off - 6, 8);
     int n, i, emin[2] = { 0, }, sum = 0;
     unsigned sig0 = 0, sig1 = 0;
+	int diff;
+	unsigned sum0;
+	unsigned sum1;
+	int vodd;
+	int veven;
+	int v;
+	unsigned chk;
+	struct group_s *g;
 
     if(seg->exp)
         n = 17;
@@ -992,7 +1018,7 @@ decode_char (zbar_decoder_t *dcode,
         sig0 += sum;
     }
 
-    int diff = emin[~n & 1];
+    diff = emin[~n & 1];
     diff = diff + (diff << 4);
     diff = diff + (diff << 8);
 
@@ -1001,8 +1027,8 @@ decode_char (zbar_decoder_t *dcode,
 
     dbprintf(2, " emin=%d,%d el=%04x/%04x", emin[0], emin[1], sig0, sig1);
 
-    unsigned sum0 = sig0 + (sig0 >> 8);
-    unsigned sum1 = sig1 + (sig1 >> 8);
+    sum0 = sig0 + (sig0 >> 8);
+    sum1 = sig1 + (sig1 >> 8);
     sum0 += sum0 >> 4;
     sum1 += sum1 >> 4;
     sum0 &= 0xf;
@@ -1024,21 +1050,21 @@ decode_char (zbar_decoder_t *dcode,
     zassert(i < sizeof(groups) / sizeof(*groups), -1,
             "n=%d sum=%d/%d sig=%04x/%04x g=%d",
             n, sum0, sum1, sig0, sig1, i);
-    struct group_s *g = groups + i;
+    g = groups + i;
     dbprintf(2, "\n            g=%d(%d,%d,%d/%d)",
              i, g->sum, g->wmax, g->todd, g->teven);
 
-    int vodd = calc_value4(sig0 + 0x1111, sum0 + 4, g->wmax, ~n & 1);
+    vodd = calc_value4(sig0 + 0x1111, sum0 + 4, g->wmax, ~n & 1);
     dbprintf(2, " v=%d", vodd);
     if(vodd < 0 || vodd > g->todd)
         return(ZBAR_NONE);
 
-    int veven = calc_value4(sig1 + 0x1111, sum1 + 4, 9 - g->wmax, n & 1);
+    veven = calc_value4(sig1 + 0x1111, sum1 + 4, 9 - g->wmax, n & 1);
     dbprintf(2, "/%d", veven);
     if(veven < 0 || veven > g->teven)
         return(ZBAR_NONE);
 
-    int v = g->sum;
+    v = g->sum;
     if(n & 2)
         v += vodd + veven * g->todd;
     else
@@ -1046,7 +1072,7 @@ decode_char (zbar_decoder_t *dcode,
 
     dbprintf(2, " f=%d(%x%x%x)", seg->finder, seg->exp, seg->color, seg->side);
 
-    unsigned chk = 0;
+    chk = 0;
     if(seg->exp) {
         unsigned side = seg->color ^ seg->side ^ 1;
         if(v >= 4096)
@@ -1084,7 +1110,7 @@ decode_char (zbar_decoder_t *dcode,
     return(ZBAR_PARTIAL);
 }
 
-static inline int
+static __inline int
 alloc_segment (databar_decoder_t *db)
 {
     unsigned maxage = 0, csegs = db->csegs;
@@ -1147,7 +1173,7 @@ alloc_segment (databar_decoder_t *db)
     return(old);
 }
 
-static inline zbar_symbol_type_t
+static __inline zbar_symbol_type_t
 decode_finder (zbar_decoder_t *dcode)
 {
     databar_decoder_t *db = &dcode->databar;
@@ -1156,6 +1182,9 @@ decode_finder (zbar_decoder_t *dcode)
     unsigned e2 = pair_width(dcode, 3);
     unsigned e1, e3, s, finder, dir;
     int sig, iseg;
+	int rc;
+	int i;
+
     dbprintf(2, "      databar: e0=%d e2=%d", e0, e2);
     if(e0 < e2) {
         unsigned e = e2 * 4;
@@ -1214,13 +1243,13 @@ decode_finder (zbar_decoder_t *dcode)
     seg->width = s;
     seg->epoch = db->epoch;
 
-    int rc = decode_char(dcode, seg, 12 - dir, -1);
+    rc = decode_char(dcode, seg, 12 - dir, -1);
     if(!rc)
         seg->partial = 1;
     else
         db->epoch++;
 
-    int i = (dcode->idx + 8 + dir) & 0xf;
+    i = (dcode->idx + 8 + dir) & 0xf;
     zassert(db->chars[i] == -1, ZBAR_NONE, "\n");
     db->chars[i] = iseg;
     return(rc);

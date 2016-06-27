@@ -261,7 +261,7 @@ enum {
 
 #define TMPL_FMT(t, ...) do {                                 \
         static const char *_st = (t);                         \
-        i = snprintf(*buf + n, maxlen - n, _st, __VA_ARGS__); \
+        i = _snprintf(*buf + n, maxlen - n, _st, __VA_ARGS__); \
         assert(i > 0);                                        \
         n += i;                                               \
         assert(n <= maxlen);                                  \
@@ -273,6 +273,8 @@ char *zbar_symbol_xml (const zbar_symbol_t *sym,
 {
     unsigned int datalen, maxlen;
     int i, n = 0;
+	unsigned int cfgs;
+	unsigned int mods;
 
     const char *type = zbar_get_symbol_name(sym->type);
     const char *orient = zbar_get_orientation_name(sym->orient);
@@ -297,10 +299,10 @@ char *zbar_symbol_xml (const zbar_symbol_t *sym,
 
     maxlen = (MAX_STATIC + strlen(type) + strlen(orient) +
               datalen + MAX_INT_DIGITS + 1);
-    unsigned int mods = sym->modifiers;
+    mods = sym->modifiers;
     if(mods)
         maxlen += MAX_MOD;
-    unsigned int cfgs = sym->configs & ~(1 << ZBAR_CFG_ENABLE);
+    cfgs = sym->configs & ~(1 << ZBAR_CFG_ENABLE);
     if(cfgs)
         maxlen += MAX_CFG;
     if(binary)
@@ -371,7 +373,7 @@ zbar_symbol_set_t *_zbar_symbol_set_create ()
     return(syms);
 }
 
-inline void _zbar_symbol_set_free (zbar_symbol_set_t *syms)
+__inline void _zbar_symbol_set_free (zbar_symbol_set_t *syms)
 {
     zbar_symbol_t *sym, *next;
     for(sym = syms->head; sym; sym = next) {

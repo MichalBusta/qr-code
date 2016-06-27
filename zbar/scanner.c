@@ -122,7 +122,7 @@ zbar_color_t zbar_scanner_get_color (const zbar_scanner_t *scn)
     return((scn->y1_sign <= 0) ? ZBAR_SPACE : ZBAR_BAR);
 }
 
-static inline unsigned calc_thresh (zbar_scanner_t *scn)
+static __inline unsigned calc_thresh (zbar_scanner_t *scn)
 {
     /* threshold 1st to improve noise rejection */
     unsigned dx, thresh = scn->y1_thresh;
@@ -148,7 +148,7 @@ static inline unsigned calc_thresh (zbar_scanner_t *scn)
     return(scn->y1_min_thresh);
 }
 
-static inline zbar_symbol_type_t process_edge (zbar_scanner_t *scn,
+static __inline zbar_symbol_type_t process_edge (zbar_scanner_t *scn,
                                                int y1)
 {
     if(!scn->y1_sign)
@@ -173,7 +173,7 @@ static inline zbar_symbol_type_t process_edge (zbar_scanner_t *scn,
     return(ZBAR_PARTIAL);
 }
 
-inline zbar_symbol_type_t zbar_scanner_flush (zbar_scanner_t *scn)
+__inline zbar_symbol_type_t zbar_scanner_flush (zbar_scanner_t *scn)
 {
     unsigned x;
     if(!scn->y1_sign)

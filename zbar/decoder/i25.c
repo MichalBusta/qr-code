@@ -32,7 +32,7 @@
 #include "debug.h"
 #include "decoder.h"
 
-static inline unsigned char i25_decode1 (unsigned char enc,
+static __inline unsigned char i25_decode1 (unsigned char enc,
                                          unsigned e,
                                          unsigned s)
 {
@@ -45,19 +45,23 @@ static inline unsigned char i25_decode1 (unsigned char enc,
     return(enc);
 }
 
-static inline unsigned char i25_decode10 (zbar_decoder_t *dcode,
+static __inline unsigned char i25_decode10 (zbar_decoder_t *dcode,
                                           unsigned char offset)
 {
     i25_decoder_t *dcode25 = &dcode->i25;
+	signed char i;
+	unsigned char enc, par;
+	unsigned char j;
+
     dbprintf(2, " s=%d", dcode25->s10);
     if(dcode25->s10 < 10)
         return(0xff);
 
     /* threshold bar width ratios */
-    unsigned char enc = 0, par = 0;
-    signed char i;
+    enc = 0, par = 0;
+    
     for(i = 8; i >= 0; i -= 2) {
-        unsigned char j = offset + ((dcode25->direction) ? i : 8 - i);
+        j = offset + ((dcode25->direction) ? i : 8 - i);
         enc = i25_decode1(enc, get_width(dcode, j), dcode25->s10);
         if(enc == 0xff)
             return(0xff);
@@ -88,14 +92,18 @@ static inline unsigned char i25_decode10 (zbar_decoder_t *dcode,
     return(enc);
 }
 
-static inline signed char i25_decode_start (zbar_decoder_t *dcode)
+static __inline signed char i25_decode_start (zbar_decoder_t *dcode)
 {
     i25_decoder_t *dcode25 = &dcode->i25;
+	unsigned char i;
+	unsigned char enc;
+	unsigned quiet;
+
     if(dcode25->s10 < 10)
         return(ZBAR_NONE);
 
-    unsigned char enc = 0;
-    unsigned char i = 10;
+    enc = 0;
+    i = 10;
     enc = i25_decode1(enc, get_width(dcode, i++), dcode25->s10);
     enc = i25_decode1(enc, get_width(dcode, i++), dcode25->s10);
     enc = i25_decode1(enc, get_width(dcode, i++), dcode25->s10);
@@ -111,7 +119,7 @@ static inline signed char i25_decode_start (zbar_decoder_t *dcode)
      * we require 5.25n for w=2n to 6.75n for w=3n
      * (FIXME should really factor in w:n ratio)
      */
-    unsigned quiet = get_width(dcode, i);
+    quiet = get_width(dcode, i);
     if(quiet && quiet < dcode25->s10 * 3 / 8) {
         dbprintf(3, "      i25: s=%d enc=%x q=%d [invalid qz]\n",
                  dcode25->s10, enc, quiet);
@@ -124,7 +132,7 @@ static inline signed char i25_decode_start (zbar_decoder_t *dcode)
     return(ZBAR_PARTIAL);
 }
 
-static inline int i25_acquire_lock (zbar_decoder_t *dcode)
+static __inline int i25_acquire_lock (zbar_decoder_t *dcode)
 {
     int i;
     /* lock shared resources */
@@ -139,9 +147,11 @@ static inline int i25_acquire_lock (zbar_decoder_t *dcode)
     return(0);
 }
 
-static inline signed char i25_decode_end (zbar_decoder_t *dcode)
+static __inline signed char i25_decode_end (zbar_decoder_t *dcode)
 {
+	int i;
     i25_decoder_t *dcode25 = &dcode->i25;
+	unsigned char E;
 
     /* check trailing quiet zone */
     unsigned quiet = get_width(dcode, 0);
@@ -154,7 +164,7 @@ static inline signed char i25_decode_end (zbar_decoder_t *dcode)
     }
 
     /* check exit condition */
-    unsigned char E = decode_e(get_width(dcode, 3), dcode25->width, 45);
+    E = decode_e(get_width(dcode, 3), dcode25->width, 45);
     if((!dcode25->direction)
        ? E - 3 > 4
        : (E > 2 ||
@@ -169,7 +179,6 @@ static inline signed char i25_decode_end (zbar_decoder_t *dcode)
     if(dcode25->direction) {
         /* reverse buffer */
         dbprintf(2, " (rev)");
-        int i;
         for(i = 0; i < dcode25->character / 2; i++) {
             unsigned j = dcode25->character - 1 - i;
             char c = dcode->buf[i];
@@ -201,6 +210,8 @@ static inline signed char i25_decode_end (zbar_decoder_t *dcode)
 zbar_symbol_type_t _zbar_decode_i25 (zbar_decoder_t *dcode)
 {
     i25_decoder_t *dcode25 = &dcode->i25;
+	unsigned char c;
+	unsigned char *buf;
 
     /* update latest character width */
     dcode25->s10 -= get_width(dcode, 10);
@@ -225,7 +236,7 @@ zbar_symbol_type_t _zbar_decode_i25 (zbar_decoder_t *dcode)
     if(dcode25->character == 4 && i25_acquire_lock(dcode))
         return(ZBAR_PARTIAL);
 
-    unsigned char c = i25_decode10(dcode, 1);
+    c = i25_decode10(dcode, 1);
     dbprintf(2, " c=%x", c);
     if(c > 9) {
         dbprintf(2, " [aborted]\n");
@@ -237,7 +248,6 @@ zbar_symbol_type_t _zbar_decode_i25 (zbar_decoder_t *dcode)
         goto reset;
     }
 
-    unsigned char *buf;
     if(dcode25->character >= 4)
         buf = dcode->buf;
     else

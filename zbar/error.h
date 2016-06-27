@@ -23,19 +23,21 @@
 #ifndef _ERROR_H_
 #define _ERROR_H_
 
-#include <config.h>
+#include "unistd.h"
+#include "config.h"
 #ifdef HAVE_INTTYPES_H
 # include <inttypes.h>
 #endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#define HAVE_ERRNO_H
 #ifdef HAVE_ERRNO_H
 # include <errno.h>
 #endif
 #include <assert.h>
 
-#include <zbar.h>
+#include "zbar.h"
 
 #ifdef _WIN32
 # include <windows.h>
@@ -121,11 +123,11 @@ extern int _zbar_verbosity;
 
 #endif
 
-static inline int err_copy (void *dst_c,
+static __inline int err_copy (void *dst_c,
                             void *src_c)
 {
-    errinfo_t *dst = dst_c;
-    errinfo_t *src = src_c;
+	errinfo_t *dst = (errinfo_t *)dst_c;
+	errinfo_t *src = (errinfo_t *)src_c;
     assert(dst->magic == ERRINFO_MAGIC);
     assert(src->magic == ERRINFO_MAGIC);
 
@@ -140,7 +142,7 @@ static inline int err_copy (void *dst_c,
     return(-1);
 }
 
-static inline int err_capture (const void *container,
+static __inline int err_capture (const void *container,
                                errsev_t sev,
                                zbar_error_t type,
                                const char *func,
@@ -165,7 +167,7 @@ static inline int err_capture (const void *container,
     return(-1);
 }
 
-static inline int err_capture_str (const void *container,
+static __inline int err_capture_str (const void *container,
                                    errsev_t sev,
                                    zbar_error_t type,
                                    const char *func,
@@ -176,11 +178,11 @@ static inline int err_capture_str (const void *container,
     assert(err->magic == ERRINFO_MAGIC);
     if(err->arg_str)
         free(err->arg_str);
-    err->arg_str = strdup(arg);
+    err->arg_str = _strdup(arg);
     return(err_capture(container, sev, type, func, detail));
 }
 
-static inline int err_capture_int (const void *container,
+static __inline int err_capture_int (const void *container,
                                    errsev_t sev,
                                    zbar_error_t type,
                                    const char *func,
@@ -193,7 +195,7 @@ static inline int err_capture_int (const void *container,
     return(err_capture(container, sev, type, func, detail));
 }
 
-static inline int err_capture_num (const void *container,
+static __inline int err_capture_num (const void *container,
                                    errsev_t sev,
                                    zbar_error_t type,
                                    const char *func,
@@ -206,14 +208,14 @@ static inline int err_capture_num (const void *container,
     return(err_capture(container, sev, type, func, detail));
 }
 
-static inline void err_init (errinfo_t *err,
+static __inline void err_init (errinfo_t *err,
                              errmodule_t module)
 {
     err->magic = ERRINFO_MAGIC;
     err->module = module;
 }
 
-static inline void err_cleanup (errinfo_t *err)
+static __inline void err_cleanup (errinfo_t *err)
 {
     assert(err->magic == ERRINFO_MAGIC);
     if(err->buf) {

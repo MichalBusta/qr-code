@@ -80,7 +80,7 @@ struct zbar_window_s {
 /* window.draw has to be thread safe wrt/other apis
  * FIXME should be a semaphore
  */
-static inline int window_lock (zbar_window_t *w)
+static __inline int window_lock (zbar_window_t *w)
 {
     int rc = 0;
     if((rc = _zbar_mutex_lock(&w->imglock))) {
@@ -92,7 +92,7 @@ static inline int window_lock (zbar_window_t *w)
     return(0);
 }
 
-static inline int window_unlock (zbar_window_t *w)
+static __inline int window_unlock (zbar_window_t *w)
 {
     int rc = 0;
     if((rc = _zbar_mutex_unlock(&w->imglock))) {
@@ -104,7 +104,7 @@ static inline int window_unlock (zbar_window_t *w)
     return(0);
 }
 
-static inline int _zbar_window_add_format (zbar_window_t *w,
+static __inline int _zbar_window_add_format (zbar_window_t *w,
                                            uint32_t fmt)
 {
     int i;
@@ -118,7 +118,7 @@ static inline int _zbar_window_add_format (zbar_window_t *w,
     return(i);
 }
 
-static inline point_t window_scale_pt (zbar_window_t *w,
+static __inline point_t window_scale_pt (zbar_window_t *w,
                                        point_t p)
 {
     p.x = ((long)p.x * w->scale_num + w->scale_den - 1) / w->scale_den;

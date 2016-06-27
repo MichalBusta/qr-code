@@ -31,7 +31,7 @@
 
 typedef LONG refcnt_t;
 
-static inline int _zbar_refcnt (refcnt_t *cnt,
+static __inline int _zbar_refcnt (refcnt_t *cnt,
                                 int delta)
 {
     int rc = -1;

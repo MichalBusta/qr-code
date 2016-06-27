@@ -57,7 +57,7 @@ typedef enum zbar_format_group_e {
 } zbar_format_group_t;
 
 
-struct zbar_image_s {
+struct zbar_image_s  {
     uint32_t format;            /* fourcc image format code */
     unsigned width, height;     /* image size */
     const void *data;           /* image sample data */
@@ -109,7 +109,7 @@ extern int zbar_image_write_png(const zbar_image_t*, const char*);
 # define zbar_image_write_png(...)
 #endif
 
-static inline void _zbar_image_refcnt (zbar_image_t *img,
+static __inline void _zbar_image_refcnt (zbar_image_t *img,
                                        int delta)
 {
     if(!_zbar_refcnt(&img->refcnt, delta) && delta <= 0) {
@@ -120,7 +120,7 @@ static inline void _zbar_image_refcnt (zbar_image_t *img,
     }
 }
 
-static inline void _zbar_image_swap_symbols (zbar_image_t *a,
+static __inline void _zbar_image_swap_symbols (zbar_image_t *a,
                                              zbar_image_t *b)
 {
     zbar_symbol_set_t *tmp = a->syms;
@@ -128,7 +128,7 @@ static inline void _zbar_image_swap_symbols (zbar_image_t *a,
     b->syms = tmp;
 }
 
-static inline void _zbar_image_copy_size (zbar_image_t *dst,
+static __inline void _zbar_image_copy_size (zbar_image_t *dst,
                                           const zbar_image_t *src)
 {
     dst->width = src->width;

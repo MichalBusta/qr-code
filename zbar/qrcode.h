@@ -6,7 +6,7 @@
 #ifndef _QRCODE_H_
 #define _QRCODE_H_
 
-#include <zbar.h>
+#include "zbar.h"
 
 typedef struct qr_reader qr_reader;
 
